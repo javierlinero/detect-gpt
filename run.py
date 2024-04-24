@@ -777,7 +777,7 @@ if __name__ == '__main__':
     parser.add_argument('--pre_perturb_span_length', type=int, default=5)
     parser.add_argument('--random_fills', action='store_true')
     parser.add_argument('--random_fills_tokens', action='store_true')
-    parser.add_argument('--cache_dir', type=str, default="~/.cache")
+    parser.add_argument('--cache_dir', type=str, default="/scratch/network/jl5951/model_cache")
     args = parser.parse_args()
 
     API_TOKEN_COUNTER = 0
@@ -800,7 +800,7 @@ if __name__ == '__main__':
     else:
         base_model_name = "openai-" + args.openai_model.replace('/', '_')
     scoring_model_string = (f"-{args.scoring_model_name}" if args.scoring_model_name else "").replace('/', '_')
-    SAVE_FOLDER = f"tmp_results/{output_subfolder}{base_model_name}{scoring_model_string}-{args.mask_filling_model_name}-{sampling_string}/{START_DATE}-{START_TIME}-{precision_string}-{args.pct_words_masked}-{args.n_perturbation_rounds}-{args.dataset}-{args.n_samples}"
+    SAVE_FOLDER = f"/scratch/network/jl5951/tmp_results/{output_subfolder}{base_model_name}{scoring_model_string}-{args.mask_filling_model_name}-{sampling_string}/{START_DATE}-{START_TIME}-{precision_string}-{args.pct_words_masked}-{args.n_perturbation_rounds}-{args.dataset}-{args.n_samples}"
     if not os.path.exists(SAVE_FOLDER):
         os.makedirs(SAVE_FOLDER)
     print(f"Saving results to absolute path: {os.path.abspath(SAVE_FOLDER)}")
@@ -931,7 +931,7 @@ if __name__ == '__main__':
     save_llr_histograms(outputs)
 
     # move results folder from tmp_results/ to results/, making sure necessary directories exist
-    new_folder = SAVE_FOLDER.replace("tmp_results", "results")
+    new_folder = SAVE_FOLDER.replace("/scratch/network/jl5951/tmp_results", "/scratch/network/jl5951/results")
     if not os.path.exists(os.path.dirname(new_folder)):
         os.makedirs(os.path.dirname(new_folder))
     os.rename(SAVE_FOLDER, new_folder)

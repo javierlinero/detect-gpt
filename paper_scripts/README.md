@@ -16,4 +16,9 @@ python3 --version
 Make sure you have a python version >= 3.9.6.
 
 ## Change Directories
-You are provided with a 10GB and 100GB storage, you will need to use the 100GB to save your model. Access `run.py` and change 
+You are provided with a 10GB and 100GB storage, you will need to use the 100GB to save your model. Access `run.py` and change
+
+```
+chmod +x /paper_scripts/example.sh
+sh /paper_scripts/example.sh
+```
