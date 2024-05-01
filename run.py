@@ -196,12 +196,23 @@ def _openai_sample(p):
         p = drop_last_word(p)
 
     # sample from the openai model
-    kwargs = { "engine": args.openai_model, "max_tokens": 200 }
+    kwargs = { "model": args.openai_model, "max_tokens": 200 }
     if args.do_top_p:
         kwargs['top_p'] = args.top_p
-    
-    r = openai.Completion.create(prompt=f"{p}", **kwargs)
-    return p + r['choices'][0].text
+    if args.openai_model == "davinci-002":        
+        r = openai.completions.create(prompt=f"{p}", **kwargs)
+        return p + r.choices[0].text
+    else:
+        r = openai.chat.completions.create(
+            model=args.openai_model,
+            max_tokens=200,
+            messages=[
+                {"role": "user", "content": f"Finish this prompt {p}"}
+            ],
+            top_p = args.top_p 
+        )
+        return p + r.choices[0].message.content
+
 
 
 # sample from base_model using ****only**** the first 30 tokens in each example as context
@@ -265,14 +276,53 @@ def get_likelihood(logits, labels):
 # Get the log likelihood of each text under the base_model
 def get_ll(text):
     if args.openai_model:        
-        kwargs = { "engine": args.openai_model, "temperature": 0, "max_tokens": 0, "echo": True, "logprobs": 0}
-        r = openai.Completion.create(prompt=f"<|endoftext|>{text}", **kwargs)
-        result = r['choices'][0]
-        tokens, logprobs = result["logprobs"]["tokens"][1:], result["logprobs"]["token_logprobs"][1:]
+        # kwargs = { "model": args.openai_model, "temperature": 0, "max_tokens": 0, "echo": True, "logprobs": 0}
+        # r = openai.completions.create(prompt=f"<|endoftext|>{text}", **kwargs)
+        # result = r.choices[0]
+        # tokens, logprobs = result["logprobs"]["tokens"][1:], result["logprobs"]["token_logprobs"][1:]
+        if args.openai_model != "davinci-002":
+            try:
+                response = openai.chat.completions.create(
+                    model=args.openai_model,
+                    messages=[
+                        {"role": "user", "content": f"<|endoftext|>{text}"}
+                    ],
+                    #max_tokens=n_tokens,
+                    logprobs=1,  # request log probabilities
+                    temperature=0
+                )
 
-        assert len(tokens) == len(logprobs), f"Expected {len(tokens)} logprobs, got {len(logprobs)}"
+                choice = response.choices[0]
+                tokens = choice.logprobs.tokens[1:]  
+                token_logprobs = choice.logprobs.token_logprobs[1:]  
+                
+                assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
 
-        return np.mean(logprobs)
+                return np.mean(token_logprobs)
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                return [], []
+        else:
+            try:
+                response = openai.completions.create(
+                    model=args.openai_model,  
+                    prompt=f"<|endoftext|>{text}",
+                    #max_tokens=n_tokens,
+                    logprobs=1,  # request log probabilities
+                    echo=True,    # include the input in the output
+                    temperature=0
+                )
+
+                choice = response.choices[0]
+                tokens = choice.logprobs.tokens[1:]  
+                token_logprobs = choice.logprobs.token_logprobs[1:]  
+                
+                assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
+
+                return np.mean(token_logprobs)
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                return [], []
     else:
         with torch.no_grad():
             tokenized = base_tokenizer(text, return_tensors="pt").to(DEVICE)
@@ -784,6 +834,11 @@ if __name__ == '__main__':
 
     if args.openai_model is not None:
         import openai
+        from dotenv import dotenv_values
+        env_vars = dotenv_values(".env")
+        
+        # Access specific environment variables
+        args.openai_key = env_vars.get("OPENAIKEY")
         assert args.openai_key is not None, "Must provide OpenAI API key as --openai_key"
         openai.api_key = args.openai_key
 
