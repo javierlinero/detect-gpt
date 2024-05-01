@@ -293,8 +293,8 @@ def get_ll(text):
                 )
 
                 choice = response.choices[0]
-                tokens = choice.logprobs.tokens[1:]  
-                token_logprobs = choice.logprobs.token_logprobs[1:]  
+                tokens = [token.token for token in choice.logprobs.content]
+                token_logprobs = [token.logprob for token in choice.logprobs.content]
                 
                 assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
 
