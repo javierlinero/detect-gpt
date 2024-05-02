@@ -294,11 +294,15 @@ def get_ll(text):
 
                 choice = response.choices[0]
                 tokens = [token.token for token in choice.logprobs.content][1:]
-                token_logprobs = [token.logprob for token in choice.logprobs.content][1:]
+                token_logprobs = [token.logprob for token in choice.logprobs.content if token.logprob is not None and not np.isnan(token.logprob)][1:]
                 
-                assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
-
-                return np.mean(token_logprobs)
+                if token_logprobs:
+                    return np.mean(token_logprobs)
+                else:
+                    print("all token probabilities are invalid or list is empty after filtering")
+                    return 0
+                # assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
+                # return np.mean(token_logprobs)
             except Exception as e:
                 print(f"An error occurred: {e}")
                 return [], []
