@@ -288,7 +288,7 @@ def get_ll(text):
                         {"role": "user", "content": f"<|endoftext|>{text}"}
                     ],
                     #max_tokens=n_tokens,
-                    logprobs=1,  # request log probabilities
+                    logprobs=True,  # request log probabilities
                     temperature=0
                 )
 
