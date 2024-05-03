@@ -199,7 +199,7 @@ def _openai_sample(p):
     kwargs = { "model": args.openai_model, "max_tokens": 200 }
     if args.do_top_p:
         kwargs['top_p'] = args.top_p
-    if args.openai_model == "davinci-002":        
+    if args.openai_model == "davinci-002" or args.openai_model == "gpt-3.5-turbo-instruct-0914":        
         r = openai.completions.create(prompt=f"{p}", **kwargs)
         return p + r.choices[0].text
     else:
@@ -280,7 +280,7 @@ def get_ll(text):
         # r = openai.completions.create(prompt=f"<|endoftext|>{text}", **kwargs)
         # result = r.choices[0]
         # tokens, logprobs = result["logprobs"]["tokens"][1:], result["logprobs"]["token_logprobs"][1:]
-        if args.openai_model != "davinci-002":
+        if args.openai_model == "gpt-3.5-turbo-0125" or args.openai_model == "gpt-4-1106-vision-preview":
             try:
                 response = openai.chat.completions.create(
                     model=args.openai_model,
@@ -313,7 +313,7 @@ def get_ll(text):
                     prompt=f"<|endoftext|>{text}",
                     #max_tokens=n_tokens,
                     logprobs=1,  # request log probabilities
-                    echo=True,    # include the input in the output
+                    #echo=True,    # include the input in the output
                     temperature=0
                 )
 
@@ -838,11 +838,11 @@ if __name__ == '__main__':
 
     if args.openai_model is not None:
         import openai
-        from dotenv import dotenv_values
-        env_vars = dotenv_values(".env")
+        #from dotenv import dotenv_values
+        #env_vars = dotenv_values(".env")
         
         # Access specific environment variables
-        args.openai_key = env_vars.get("OPENAIKEY")
+        #args.openai_key = env_vars.get("OPENAIKEY")
         assert args.openai_key is not None, "Must provide OpenAI API key as --openai_key"
         openai.api_key = args.openai_key
 
