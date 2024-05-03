@@ -199,15 +199,15 @@ def _openai_sample(p):
     kwargs = { "model": args.openai_model, "max_tokens": 200 }
     if args.do_top_p:
         kwargs['top_p'] = args.top_p
-    if args.openai_model == "davinci-002" or args.openai_model == "gpt-3.5-turbo-instruct-0914":        
+    if (args.openai_model == "davinci-002"):        
         r = openai.completions.create(prompt=f"{p}", **kwargs)
         return p + r.choices[0].text
-    else:
+    elif args.openai_model == "gpt-4-turbo-preview" or args.openai_model == "gpt-3.5-turbo-0125":
         r = openai.chat.completions.create(
             model=args.openai_model,
             max_tokens=200,
             messages=[
-                {"role": "user", "content": f"Finish this prompt {p}"}
+                {"role": "user", "content": f"Repeat the following text and extend it: {p}"}
             ],
             top_p = args.top_p 
         )
@@ -274,64 +274,60 @@ def get_likelihood(logits, labels):
 
 
 # Get the log likelihood of each text under the base_model
+import numpy as np
+
 def get_ll(text):
     if args.openai_model:        
-        # kwargs = { "model": args.openai_model, "temperature": 0, "max_tokens": 0, "echo": True, "logprobs": 0}
-        # r = openai.completions.create(prompt=f"<|endoftext|>{text}", **kwargs)
-        # result = r.choices[0]
-        # tokens, logprobs = result["logprobs"]["tokens"][1:], result["logprobs"]["token_logprobs"][1:]
-        if args.openai_model == "gpt-3.5-turbo-0125" or args.openai_model == "gpt-4-1106-vision-preview":
-            try:
+        try:
+            if (args.openai_model == "gpt-4-turbo-preview" or args.openai_model == "gpt-3.5-turbo-0125") :
                 response = openai.chat.completions.create(
                     model=args.openai_model,
                     messages=[
-                        {"role": "user", "content": f"<|endoftext|>{text}"}
+                        {"role": "user", "content": f"Repeat the following text: {text}"}
                     ],
-                    #max_tokens=n_tokens,
-                    logprobs=True,  # request log probabilities
+                    max_tokens=200,
+                    logprobs=True,
                     temperature=0
                 )
-
-                choice = response.choices[0]
-                tokens = [token.token for token in choice.logprobs.content][1:]
-                token_logprobs = [token.logprob for token in choice.logprobs.content if token.logprob is not None and not np.isnan(token.logprob)][1:]
                 
-                if token_logprobs:
+                choice = response.choices[0]
+                tokens = [token.token for token in choice.logprobs.content]
+                token_logprobs = [token.logprob for token in choice.logprobs.content]
+
+                if token_logprobs:  # check if list not empty
                     return np.mean(token_logprobs)
-                else:
-                    print("all token probabilities are invalid or list is empty after filtering")
-                    return 0
-                # assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
-                # return np.mean(token_logprobs)
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                return [], []
-        else:
-            try:
+
+            elif args.openai_model == "davinci-002":
                 response = openai.completions.create(
                     model=args.openai_model,  
                     prompt=f"<|endoftext|>{text}",
-                    #max_tokens=n_tokens,
-                    logprobs=1,  # request log probabilities
-                    #echo=True,    # include the input in the output
-                    temperature=0
+                    logprobs=0,
+                    temperature=0,
+                    max_tokens=0,
+                    echo=True
                 )
 
                 choice = response.choices[0]
-                tokens = choice.logprobs.tokens[1:]  
-                token_logprobs = choice.logprobs.token_logprobs[1:]  
-                
-                assert len(tokens) == len(token_logprobs), f"Expected {len(tokens)} logprobs, got {len(token_logprobs)}"
 
-                return np.mean(token_logprobs)
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                return [], []
+                logprobs = choice.logprobs  
+                tokens = logprobs.tokens[1:]  # skip first token
+                token_logprobs = logprobs.token_logprobs[1:]
+                assert len(tokens) == len(token_logprobs)
+
+                # check if logprobs isn't empty
+                if token_logprobs:
+                    return np.mean(token_logprobs)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return np.nan  # return nan as exception
     else:
         with torch.no_grad():
             tokenized = base_tokenizer(text, return_tensors="pt").to(DEVICE)
             labels = tokenized.input_ids
-            return -base_model(**tokenized, labels=labels).loss.item()
+            output = base_model(**tokenized, labels=labels)
+            loss = -output.loss.item()
+            return loss if not np.isnan(loss) else np.nan
+
 
 
 def get_lls(texts):
@@ -838,11 +834,6 @@ if __name__ == '__main__':
 
     if args.openai_model is not None:
         import openai
-        #from dotenv import dotenv_values
-        #env_vars = dotenv_values(".env")
-        
-        # Access specific environment variables
-        #args.openai_key = env_vars.get("OPENAIKEY")
         assert args.openai_key is not None, "Must provide OpenAI API key as --openai_key"
         openai.api_key = args.openai_key
 
