@@ -81,13 +81,15 @@ def process_model(model_path):
             detect_gpt_score = best_auroc_score(dataset_path)
             roberta_large_score = auroc_score(os.path.join(dataset_path, "roberta-large-openai-detector_results.json"))
             roberta_base_score = auroc_score(os.path.join(dataset_path, "roberta-base-openai-detector_results.json"))
-            
+            log_score = auroc_score(os.path.join(dataset_path, "likelihood_threshold_results.json"))
+
             scores.append({
                 "Model": model_name,
                 "Dataset": dataset_name,
                 "DetectGPT": detect_gpt_score,
                 "Roberta-Large": roberta_large_score,
-                "Roberta-Base": roberta_base_score
+                "Roberta-Base": roberta_base_score,
+                "log p(x)": log_score
             })
     return scores
 
