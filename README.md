@@ -1,8 +1,5 @@
-# DetectGPT: Zero-Shot Machine-Generated Text Detection using Probability Curvature
-
-## Official implementation of the experiments in the [DetectGPT paper](https://arxiv.org/abs/2301.11305v1).
-
-An interactive demo of DetectGPT can be found [here](https://detectgpt.ericmitchell.ai).
+# DetectGPT
+In this project, we reproduce and extend upon DetectGPT’s findings using newer models like GPT-3.5 Turbo and GPT-4 Turbo, evaluating DetectGPT’s classification accuracy against supervised RoBERTa models.
 
 ## Instructions
 
@@ -12,19 +9,14 @@ First, install the Python dependencies:
     source env/bin/activate
     pip install -r requirements.txt
 
-Second, run any of the scripts (or just individual commands) in `paper_scripts/`.
+Secondly, we've modified the default scripts that our Adroit system can handle, these can be found in the 'base_' sh scripts in `paper_scripts/` folder. 
 
-If you'd like to run the WritingPrompts experiments, you'll need to download the WritingPrompts data from [here](https://www.kaggle.com/datasets/ratthachat/writing-prompts). Save the data into a directory `data/writingPrompts`.
+Likewise if you would like to run any of the writing prompt experiments you need to download it from [here](https://www.kaggle.com/datasets/ratthachat/writing-prompts). Save the data into a directory `data/writingPrompts`. 
 
-**Note: Intermediate results are saved in `tmp_results/`. If your experiment completes successfully, the results will be moved into the `results/` directory.**
+We also have this setup where you need to insert an `openai_key` as either the parameter or in a `.env` file when running the scripts. 
 
-## Citing the paper
-If our work is useful for your own, you can cite us with the following BibTex entry:
+Be very mindful of the pricing among the different models. 
 
-    @misc{mitchell2023detectgpt,
-        url = {https://arxiv.org/abs/2301.11305},
-        author = {Mitchell, Eric and Lee, Yoonho and Khazatsky, Alexander and Manning, Christopher D. and Finn, Chelsea},
-        title = {DetectGPT: Zero-Shot Machine-Generated Text Detection using Probability Curvature},
-        publisher = {arXiv},
-        year = {2023},
-    }
+Finally, you must modify where the intermediate and final results will be located. These have been designed specifically for the Adroit file system; if you are a princeton student change the netid section to reach the appropriate folder and visit [prerequisites](paper_scripts/README.md), otherwise set it up as so: 
+
+** Intermediate results can be saved in `tmp_results/`. If your experiment completes successfully, the results will be moved into the `results/` directory.**
